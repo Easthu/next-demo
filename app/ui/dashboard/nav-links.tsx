@@ -8,16 +8,16 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
-// Map of links to display in the side navigation.
-// Depending on the size of the application, this would be stored in a database.
+// 侧边导航栏中要显示的链接列表。
+// 根据应用的规模，这些链接通常会存储在数据库中。
 const links = [
-  { name: 'Home', href: '/dashboard', icon: HomeIcon },
+  { name: '首页', href: '/dashboard', icon: HomeIcon },
   {
-    name: 'Invoices',
+    name: '发票',
     href: '/dashboard/invoices',
     icon: DocumentDuplicateIcon,
   },
-  { name: 'Customers', href: '/dashboard/customers', icon: UserGroupIcon },
+  { name: '客户', href: '/dashboard/customers', icon: UserGroupIcon },
 ];
 
 export default function NavLinks() {

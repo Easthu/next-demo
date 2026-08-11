@@ -8,10 +8,10 @@ export const formatCurrency = (amount: number) => {
 };
 
 export const formatDateToLocal = (
-  dateStr: string,
+  dateStr: string | Date,
   locale: string = 'en-US',
 ) => {
-  const date = new Date(dateStr);
+  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
   const options: Intl.DateTimeFormatOptions = {
     day: 'numeric',
     month: 'short',
@@ -22,8 +22,8 @@ export const formatDateToLocal = (
 };
 
 export const generateYAxis = (revenue: Revenue[]) => {
-  // Calculate what labels we need to display on the y-axis
-  // based on highest record and in 1000s
+  // 计算 y 轴上需要显示的刻度标签
+  // 基于最高记录，以 1000 为单位
   const yAxisLabels = [];
   const highestRecord = Math.max(...revenue.map((month) => month.revenue));
   const topLabel = Math.ceil(highestRecord / 1000) * 1000;
@@ -36,27 +36,27 @@ export const generateYAxis = (revenue: Revenue[]) => {
 };
 
 export const generatePagination = (currentPage: number, totalPages: number) => {
-  // If the total number of pages is 7 or less,
-  // display all pages without any ellipsis.
+  // 如果总页数小于等于 7 页，
+  // 直接显示所有页码，不需要省略号。
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
-  // If the current page is among the first 3 pages,
-  // show the first 3, an ellipsis, and the last 2 pages.
+  // 如果当前页在前 3 页之内，
+  // 显示前 3 页、省略号和最后 2 页。
   if (currentPage <= 3) {
     return [1, 2, 3, '...', totalPages - 1, totalPages];
   }
 
-  // If the current page is among the last 3 pages,
-  // show the first 2, an ellipsis, and the last 3 pages.
+  // 如果当前页在最后 3 页之内，
+  // 显示前 2 页、省略号和最后 3 页。
   if (currentPage >= totalPages - 2) {
     return [1, 2, '...', totalPages - 2, totalPages - 1, totalPages];
   }
 
-  // If the current page is somewhere in the middle,
-  // show the first page, an ellipsis, the current page and its neighbors,
-  // another ellipsis, and the last page.
+  // 如果当前页在中间位置，
+  // 显示第一页、省略号、当前页及其相邻页、
+  // 另一个省略号和最后一页。
   return [
     1,
     '...',

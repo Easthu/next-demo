@@ -1,0 +1,55 @@
+// Prisma schema —— 描述数据库表结构
+// 这是 Prisma 的"真相来源"，改表结构先改这里，再 prisma db push 同步到数据库
+//
+// 命名约定：model 用首字母大写（Prisma 惯例，如 prisma.invoice.findMany）
+// 但数据库里的表名是小写的，用 @@map 映射，这样代码优雅又不改现有数据库
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7 起连接 URL 不再写这里，改由 prisma.config.ts + adapter 管理
+}
+
+// 用户表（登录用）
+model User {
+  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name     String @db.VarChar(255)
+  email    String @unique
+  password String // bcrypt 哈希，不是明文
+
+  @@map("users")
+}
+
+// 客户表
+model Customer {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String    @db.VarChar(255)
+  email     String    @db.VarChar(255)
+  image_url String    @db.VarChar(255)
+  invoices  Invoice[] // 一个客户可以有多张发票（一对多关系）
+
+  @@map("customers")
+}
+
+// 发票表
+model Invoice {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  amount      Int      // 存"分"（整数），避免浮点精度问题；显示时 /100 转元
+  status      String   @db.VarChar(255) // 'pending' | 'paid'（数据库层是字符串，应用层用 Zod 约束）
+  date        DateTime @db.Date
+  customer_id String   @db.Uuid
+  customer    Customer @relation(fields: [customer_id], references: [id])
+
+  @@map("invoices")
+}
+
+// 月度收入表（仪表盘图表用）
+model Revenue {
+  month   String @unique @db.VarChar(4) // 没有独立 id，月份本身唯一
+  revenue Int
+
+  @@map("revenue")
+}

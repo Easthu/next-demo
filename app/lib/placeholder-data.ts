@@ -1,4 +1,4 @@
-// This file contains placeholder data that you'll be replacing with real data in the Data Fetching chapter:
+// 此文件包含占位数据，在"数据获取"章节中你会用真实数据替换它们：
 // https://nextjs.org/learn/dashboard-app/fetching-data
 const users = [
   {

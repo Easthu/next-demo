@@ -9,15 +9,16 @@ import { fetchLatestInvoices } from '@/app/lib/data';
 // }: {
 //   latestInvoices: LatestInvoice[];
 // }) {
-export default async function LatestInvoices() { // Remove props
+export default async function LatestInvoices() { // 移除 props，改为自己取数
   const latestInvoices = await fetchLatestInvoices();
+  // console.log('latestInvoices :>> ', latestInvoices);
   return (
     <div className="flex w-full flex-col md:col-span-4">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Latest Invoices
+        最新发票
       </h2>
       <div className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">
-        {/* NOTE: Uncomment this code in Chapter 7 */}
+        {/* 注意：第 7 章时取消注释这段代码 */}
 
         <div className="bg-white px-6">
           {latestInvoices.map((invoice, i) => {

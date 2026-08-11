@@ -14,13 +14,13 @@ export default function Pagination({ totalPages }: { totalPages: number }) {
     params.set('page', pageNumber.toString());
     return `${pathname}?${params.toString()}`;
   };
-  // NOTE: Uncomment this code in Chapter 10
+  // 注意：第 10 章时取消注释这段代码
 
   const allPages = generatePagination(currentPage, totalPages);
 
   return (
     <>
-      {/*  NOTE: Uncomment this code in Chapter 10 */}
+      {/* 注意：第 10 章时取消注释这段代码 */}
 
       <div className="inline-flex">
         <PaginationArrow

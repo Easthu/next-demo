@@ -16,35 +16,27 @@ export default function Page() {
           className="h-0 w-0 border-b-[30px] border-l-[20px] border-r-[20px] border-b-black border-l-transparent border-r-transparent"
         />
           <p className={` ${lusitana.className}  text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-            <strong>Welcome to Acme.</strong> This is the example for the{' '}
+            <strong>欢迎使用 Acme。</strong> 这是{' '}
             <a href="https://nextjs.org/learn/" className="text-blue-500">
-              Next.js Learn Course
+              Next.js 学习课程
             </a>
-            , brought to you by Vercel.
+            的示例项目，由 Vercel 提供。
           </p>
           <Link
             href="/login"
             className="flex items-center gap-5 self-start rounded-lg bg-blue-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:text-base"
           >
-            
-            <span>Log in</span> <ArrowRightIcon className="w-5 md:w-6" />
+
+            <span>登录</span> <ArrowRightIcon className="w-5 md:w-6" />
           </Link>
         </div>
         <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-          {/* Add Hero Images Here */}
+          {/* 在这里添加 Hero 图片 */}
           <Image
         src="/hero-desktop.png"
         width={1000}
         height={760}
-        className="hidden md:block"
         alt="Screenshots of the dashboard project showing desktop version"
-      />
-      <Image
-        src="/hero-mobile.png"
-        width={560}
-        height={620}
-        className="block md:hidden"
-        alt="Screenshot of the dashboard project showing mobile version"
       />
         </div>
       </div>

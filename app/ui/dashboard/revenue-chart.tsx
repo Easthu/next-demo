@@ -4,8 +4,8 @@ import { lusitana } from '@/app/ui/fonts';
 // import { Revenue } from '@/app/lib/definitions';
 import { fetchRevenue } from '@/app/lib/data';
 
-// This component is representational only.
-// For data visualization UI, check out:
+// 这个组件仅用于示意展示。
+// 如需数据可视化 UI，可以参考：
 // https://www.tremor.so/
 // https://www.chartjs.org/
 // https://airbnb.io/visx/
@@ -17,8 +17,9 @@ import { fetchRevenue } from '@/app/lib/data';
 // }) {
 export default async function RevenueChart() { // 使组件异步，删除 props
   const revenue = await fetchRevenue(); // 在组件内获取数据
+  console.log('revenue :>> ', revenue);
   const chartHeight = 350;
-  // NOTE: Uncomment this code in Chapter 7
+  // 注意：第 7 章时取消注释这段代码
 
   const { yAxisLabels, topLabel } = generateYAxis(revenue);
 
@@ -29,7 +30,7 @@ export default async function RevenueChart() { // 使组件异步，删除 props
   return (
     <div className="w-full md:col-span-4">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Recent Revenue
+        近期收入
       </h2>
       {/* NOTE: Uncomment this code in Chapter 7 */}
 
