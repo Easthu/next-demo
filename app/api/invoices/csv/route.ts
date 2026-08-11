@@ -1,8 +1,4 @@
 import { prisma } from '@/app/lib/prisma';
-import type { Invoice } from '@prisma/client';
-
-// 客户类型（带 customer 关联的 Invoice）
-type InvoiceWithCustomer = Invoice & { customer: { name: string; email: string; image_url: string } };
 
 // 处理金额：分转元，保留两位小数
 const formatAmount = (amount: number) => {
@@ -22,7 +18,7 @@ const formatStatus = (status: string) => {
 };
 
 export async function GET(request: Request) {
-  const invoices: InvoiceWithCustomer[] = await prisma.invoice.findMany({
+  const invoices = await prisma.invoice.findMany({
     include: {
       customer: true,
     },
