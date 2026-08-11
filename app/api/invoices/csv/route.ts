@@ -26,7 +26,12 @@ export async function GET(request: Request) {
   });
 
   const header = '客户名称,邮箱,金额(美元),状态,日期\n';
-  const csvRows = invoices.map((invoice) => {
+  const csvRows = invoices.map((invoice: {
+    amount: number;
+    status: string;
+    date: Date;
+    customer: { name: string; email: string };
+  }) => {
     const { amount, status, date, customer } = invoice;
     return `${customer.name},${customer.email},${formatAmount(amount)},${formatStatus(status)},${date.toISOString().split('T')[0]}`;
   });
