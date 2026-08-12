@@ -17,7 +17,6 @@ import { fetchRevenue } from '@/app/lib/data';
 // }) {
 export default async function RevenueChart() { // 使组件异步，删除 props
   const revenue = await fetchRevenue(); // 在组件内获取数据
-  console.log('revenue :>> ', revenue);
   const chartHeight = 350;
   // 注意：第 7 章时取消注释这段代码
 

@@ -548,6 +548,244 @@ model Tag {
 
 ---
 
+## 五点五、聚合查询（统计）
+
+普通查询返回**一条条数据**，聚合查询返回**统计结果**（总和、平均、最大、计数）。
+
+### 三个聚合方法
+
+| 方法 | 干什么 | SQL 对应 | 返回什么 |
+|------|--------|---------|---------|
+| `count()` | 数数 | `COUNT(*)` | 一个数字 |
+| `aggregate()` | 全表统计（总和/平均/最大/最小） | `SUM/AVG/MAX/MIN` | 一个统计对象 |
+| `groupBy()` | 分组统计（按某个字段分组后再算） | `GROUP BY + SUM/COUNT` | 多个组的统计 |
+
+### `count()`——数数（最简单）
+
+```ts
+// 总共有多少条发票
+const total = await prisma.invoice.count();
+// → 24（一个数字）
+
+// 带条件：有多少条已支付的
+const paidCount = await prisma.invoice.count({
+  where: { status: 'paid' },
+});
+// → 15
+```
+
+对应 SQL：
+```sql
+SELECT COUNT(*) FROM invoices;
+SELECT COUNT(*) FROM invoices WHERE status = 'paid';
+```
+
+> **项目里已用**：`fetchCardData` 和 `fetchInvoicesPages` 都用了 `count()`。
+
+### `aggregate()`——全表统计
+
+`aggregate` 可以算总和、平均、最大、最小，全表范围：
+
+```ts
+const result = await prisma.invoice.aggregate({
+  where: { status: 'paid' },      // 只算已支付的
+  _sum: { amount: true },          // 求和
+});
+// → { _sum: { amount: 157952 } }    所有已支付发票的金额总和
+```
+
+可以同时算多种统计：
+
+```ts
+const result = await prisma.invoice.aggregate({
+  _sum: { amount: true },      // 总和
+  _avg: { amount: true },      // 平均
+  _max: { amount: true },      // 最大值
+  _min: { amount: true },      // 最小值
+  _count: { _all: true },      // 总条数
+});
+// → {
+//   _sum: { amount: 157952 },
+//   _avg: { amount: 6581 },
+//   _max: { amount: 54246 },
+//   _min: { amount: 500 },
+//   _count: { _all: 24 }
+// }
+```
+
+对应 SQL：
+```sql
+SELECT
+  SUM(amount) AS "sum",
+  AVG(amount) AS "avg",
+  MAX(amount) AS "max",
+  MIN(amount) AS "min",
+  COUNT(*) AS "count"
+FROM invoices;
+```
+
+#### `_sum: { amount: true }` 为什么这么写
+
+```ts
+_sum: { amount: true }
+```
+
+意思是"对 amount 字段求和"。写成 `{ amount: true }` 是因为 Prisma 允许你**选择对哪些字段做统计**——你可能只想对 amount 求和，不想对别的字段（比如 id）求和：
+
+```ts
+_sum: { amount: true }        // 只对 amount 求和
+_sum: { amount: true, tax: true }  // 对 amount 和 tax 都求和
+```
+
+> **项目里已用**：`fetchCardData` 用 `aggregate` 算已支付和待处理的金额总和。
+
+### `groupBy()`——分组统计（最强大）
+
+按某个字段**分组**，每组分别统计。
+
+#### 场景 1：按状态分组，算每种状态的总金额
+
+```ts
+const result = await prisma.invoice.groupBy({
+  by: ['status'],                    // 按状态分组
+  _sum: { amount: true },            // 每组算金额总和
+});
+// → [
+//   { status: 'paid', _sum: { amount: 120000 } },     已支付组：总金额 120000
+//   { status: 'pending', _sum: { amount: 37952 } },   待处理组：总金额 37952
+// ]
+```
+
+对应 SQL：
+```sql
+SELECT status, SUM(amount)
+FROM invoices
+GROUP BY status;
+```
+
+#### 场景 2：按客户分组，算每个客户的总消费（排行榜）
+
+```ts
+const result = await prisma.invoice.groupBy({
+  by: ['customer_id'],               // 按客户分组
+  where: { status: 'paid' },          // 只算已支付的
+  _sum: { amount: true },             // 每个客户花了多少
+  orderBy: {                          // 按消费金额倒序排
+    _sum: { amount: 'desc' },
+  },
+  take: 5,                            // 只取前 5 名（消费最多的 5 个客户）
+});
+// → [
+//   { customer_id: 'A', _sum: { amount: 80000 } },
+//   { customer_id: 'B', _sum: { amount: 50000 } },
+//   ...
+// ]
+```
+
+对应 SQL：
+```sql
+SELECT customer_id, SUM(amount)
+FROM invoices
+WHERE status = 'paid'
+GROUP BY customer_id
+ORDER BY SUM(amount) DESC
+LIMIT 5;
+```
+
+#### `orderBy: { _sum: { amount: 'desc' } }` 为什么这么写
+
+不能简写成 `orderBy: { amount: 'desc' }`，因为 **groupBy 返回的数据结构和普通查询不同**。
+
+普通查询返回的数据，`amount` 在顶层：
+```ts
+// findMany 返回：amount 在顶层
+{ id: 'xxx', amount: 80000, status: 'paid', ... }
+//             ↑ 顶层字段，orderBy: { amount: 'desc' } 就能找到
+```
+
+groupBy 返回的数据，`amount` 被包在 `_sum` 容器里：
+```ts
+// groupBy 返回：amount 在 _sum 容器里
+{ customer_id: 'A', _sum: { amount: 80000 } }
+//                    ↑         ↑
+//                    统计容器    具体值在更里面
+```
+
+因为 groupBy 可能同时算多种统计（sum、avg、max...），每种都用容器包起来防止混淆：
+```ts
+// 如果同时算 sum 和 avg
+{ customer_id: 'A', _sum: { amount: 80000 }, _avg: { amount: 4000 } }
+```
+
+所以排序时要**穿透到容器里指定哪个字段**：
+```ts
+// ❌ amount 不是顶层字段，Prisma 找不到
+orderBy: { amount: 'desc' }
+
+// ✅ 指定 _sum 容器里的 amount 字段
+orderBy: { _sum: { amount: 'desc' } }
+//         ↑    ↑
+//         哪个容器  容器里的哪个字段
+```
+
+规则：**orderBy 要对应数据的实际结构。数据在哪层，orderBy 就写到哪层。**
+
+#### groupBy 的一个坑：不返回关联数据
+
+```ts
+const result = await prisma.invoice.groupBy({
+  by: ['customer_id'],
+  _sum: { amount: true },
+});
+// → [{ customer_id: 'uuid-xxx', _sum: { amount: 80000 } }]
+//    只有 customer_id，没有客户名字！
+```
+
+groupBy 不支持 `include`，所以你拿到了 customer_id 但**没有客户名字**。要拿名字得**再查一次**：
+
+```ts
+// 第一步：groupBy 算出每个客户的消费总额
+const topCustomers = await prisma.invoice.groupBy({
+  by: ['customer_id'],
+  _sum: { amount: true },
+  orderBy: { _sum: { amount: 'desc' } },
+  take: 5,
+});
+
+// 第二步：再查这些客户的姓名
+const customers = await prisma.customer.findMany({
+  where: { id: { in: topCustomers.map(r => r.customer_id) } },
+  select: { id: true, name: true },
+});
+
+// 第三步：拼在一起
+const result = topCustomers.map(r => ({
+  name: customers.find(c => c.id === r.customer_id)?.name,
+  total: r._sum.amount,
+}));
+```
+
+### 四个统计操作符
+
+`aggregate` 和 `groupBy` 里都能用这四个：
+
+| 操作符 | 含义 | SQL 对应 | 例子 |
+|--------|------|---------|------|
+| `_sum` | 求和 | `SUM` | `_sum: { amount: true }` |
+| `_avg` | 平均 | `AVG` | `_avg: { amount: true }` |
+| `_max` | 最大 | `MAX` | `_max: { amount: true }` |
+| `_min` | 最小 | `MIN` | `_min: { amount: true }` |
+
+### 三个方法的快速选择
+
+```
+"有多少条？"           → count()
+"总共多少钱？"         → aggregate({ _sum: { amount: true } })
+"每种状态各多少钱？"    → groupBy({ by: ['status'], _sum: { amount: true } })
+```
+
+---
+
 ## 六、大小写规则（容易搞混，单独记）
 
 | 你在写什么 | 用什么大小写 | 例子 |
@@ -605,10 +843,15 @@ model Tag {
 | `prisma/schema.prisma` | 数据库表结构定义（4 个 model + 关系） |
 | `prisma.config.ts` | Prisma 7 配置（datasource URL + seed 命令） |
 | `app/lib/prisma.ts` | PrismaClient 单例（用 PrismaPg adapter） |
-| `prisma/seed.ts` | seed 脚本（用 Prisma API 灌初始数据，替代旧的 scripts/seed.js） |
-| `app/lib/data.ts` | 9 个查询函数（全部用 Prisma） |
-| `app/lib/action.ts` | 3 个写操作（create/update/delete，用 Prisma） |
-| `auth.ts` | getUser 函数（用 `prisma.user.findUnique`，替代原来的 sql） |
+| `prisma/seed.ts` | seed 脚本（用 Prisma API 灌初始数据） |
+| `app/lib/data/invoice.ts` | 发票相关查询（findMany / findUnique） |
+| `app/lib/data/customer.ts` | 客户相关查询 |
+| `app/lib/data/dashboard.ts` | 仪表盘统计查询（count / aggregate / groupBy） |
+| `app/lib/data/index.ts` | 统一导出所有查询函数 |
+| `app/lib/actions/invoice.ts` | 发票写操作（create / update / delete） |
+| `app/lib/actions/customer.ts` | 客户写操作 |
+| `app/lib/actions/auth.ts` | 登录（authenticate） |
+| `auth.ts` | getUser 函数（用 `prisma.user.findUnique`） |
 
 ---
 
@@ -637,6 +880,12 @@ Prisma 是翻译官，你说 JS，它翻译成 SQL。
   update  修改
   delete  删除
   count  数数
+
+聚合查询（统计）：
+  count()      数数（COUNT）
+  aggregate()  全表统计（SUM/AVG/MAX/MIN）
+  groupBy()    分组统计（GROUP BY）
+  groupBy 不返回关联数据，要单独再查一次
 
 大小写规则：
   model 定义用大写（Customer）

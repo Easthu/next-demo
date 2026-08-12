@@ -1,4 +1,12 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { Revenue } from './definitions';
+
+// shadcn/ui 的核心工具函数：合并 Tailwind class，解决冲突
+// 用法：cn('px-2 py-1', condition && 'bg-blue-500', className)
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export const formatCurrency = (amount: number) => {
   return (amount / 100).toLocaleString('en-US', {

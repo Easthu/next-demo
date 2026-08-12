@@ -1,15 +1,12 @@
 "use server";
-// Server Actions —— 处理写操作（增删改）和登录
-// 全部使用 Prisma ORM
+// 发票相关的 Server Actions（创建、更新、删除、批量更新）
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { signIn } from '@/auth';
-import { AuthError } from 'next-auth';
+import { auth } from '@/auth';
 import { prisma } from '@/app/lib/prisma';
 
-// 表单校验规则（金额是"元"，落库前会 *100 转成"分"）
 const FormSchema = z.object({
   id: z.string(),
   customerId: z.string({
@@ -36,10 +33,7 @@ export type State = {
   message?: string | null;
 };
 
-/**
- * 创建发票
- * 流程：Zod 校验 → 元转分 → 写库 → 清缓存 → 跳转
- */
+// 创建发票
 export async function createInvoice(prevState: State, formData: FormData) {
   const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
@@ -55,7 +49,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
   }
 
   const { customerId, amount, status } = validatedFields.data;
-  const amountInCents = amount * 100; // 元 → 分
+  const amountInCents = amount * 100;
   const date = new Date().toISOString().split('T')[0];
 
   try {
@@ -68,19 +62,14 @@ export async function createInvoice(prevState: State, formData: FormData) {
       },
     });
   } catch (error) {
-    return {
-      message: '数据库错误：创建发票失败。',
-    };
+    return { message: '数据库错误：创建发票失败。' };
   }
 
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }
 
-/**
- * 更新发票
- * 流程：Zod 校验 → 元转分 → 写库 → 清缓存 → 跳转
- */
+// 更新发票
 export async function updateInvoice(id: string, formData: FormData) {
   const { customerId, amount, status } = UpdateInvoice.parse({
     customerId: formData.get('customerId'),
@@ -88,7 +77,7 @@ export async function updateInvoice(id: string, formData: FormData) {
     status: formData.get('status'),
   });
 
-  const amountInCents = amount * 100; // 元 → 分
+  const amountInCents = amount * 100;
 
   try {
     await prisma.invoice.update({
@@ -108,14 +97,14 @@ export async function updateInvoice(id: string, formData: FormData) {
   redirect('/dashboard/invoices');
 }
 
-/**
- * 删除发票
- */
+// 删除发票（列表页用）—— 仅 admin
 export async function deleteInvoice(id: string) {
+  // ⭐ TODO（你来填）：权限校验 —— 只有 admin 能删除发票
+  // 提示（两行）：
+    const session = await auth();
+    if (session?.user?.role !== 'admin') throw new Error('无权限删除发票');
   try {
-    await prisma.invoice.delete({
-      where: { id },
-    });
+    await prisma.invoice.delete({ where: { id } });
     revalidatePath('/dashboard/invoices');
   } catch (error) {
     console.error('Database Error:', error);
@@ -123,12 +112,14 @@ export async function deleteInvoice(id: string) {
   }
 }
 
-// 删除发票并跳转（详情页用）
+// 删除发票并跳转（详情页用）—— 仅 admin
 export async function deleteInvoiceAndRedirect(id: string) {
+  // ⭐ TODO（你来填）：权限校验 —— 只有 admin 能删除发票
+  // 提示（两行）：
+    const session = await auth();
+    if (session?.user?.role !== 'admin') throw new Error('无权限删除发票');
   try {
-    await prisma.invoice.delete({
-      where: { id },
-    });
+    await prisma.invoice.delete({ where: { id } });
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('数据库错误：删除发票失败。');
@@ -138,24 +129,20 @@ export async function deleteInvoiceAndRedirect(id: string) {
   redirect('/dashboard/invoices');
 }
 
-/**
- * 处理登录请求（包装 NextAuth 的 signIn）
- */
-export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData,
-) {
+// 批量更新发票状态
+export async function bulkUpdateInvoiceStatus(formData: FormData) {
+  const ids = formData.getAll('ids') as string[];
+  const status = formData.get('status') as 'pending' | 'paid';
+
   try {
-    await signIn('credentials', formData);
+    await prisma.invoice.updateMany({
+      where: { id: { in: ids } },
+      data: { status },
+    });
   } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return '账号或密码错误。';
-        default:
-          return '发生未知错误。';
-      }
-    }
-    throw error;
+    console.error('Database Error:', error);
+    throw new Error('数据库错误：批量更新发票状态失败。');
   }
+
+  revalidatePath('/dashboard/invoices');
 }

@@ -1,6 +1,6 @@
 import AcmeLogo from '@/app/ui/acme-logo';
 import LoginForm from '@/app/ui/login-form';
- 
+ import Link from 'next/link';
 export default function LoginPage() {
   return (
     <main className="flex items-center justify-center md:h-screen">
@@ -11,6 +11,9 @@ export default function LoginPage() {
           </div>
         </div>
         <LoginForm />
+        <Link href="/register" className="text-sm text-blue-500 hover:underline">
+          还没有账号？立即注册
+        </Link>
       </div>
     </main>
   );

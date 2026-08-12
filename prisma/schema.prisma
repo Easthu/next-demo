@@ -19,6 +19,10 @@ model User {
   name     String @db.VarChar(255)
   email    String @unique
   password String // bcrypt 哈希，不是明文
+  // 角色：'admin'（管理员）| 'user'（普通用户）
+  // 数据库层是字符串，应用层用 Zod 约束 —— 跟 Invoice.status 同款套路
+  // 默认普通用户，第一个 admin 由 seed 脚本写入（见 prisma/seed.ts）
+  role     String @default("user") @db.VarChar(10)
 
   @@map("users")
 }

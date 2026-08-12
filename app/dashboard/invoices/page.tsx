@@ -2,10 +2,12 @@ import Pagination from '@/app/ui/invoices/pagination';
 import Search from '@/app/ui/search';
 import Table from '@/app/ui/invoices/table';
 import { CreateInvoice } from '@/app/ui/invoices/buttons';
+import { BatchToolbar } from '@/app/ui/invoices/batch-toolbar';
 import { lusitana } from '@/app/ui/fonts';
 import { InvoicesTableSkeleton } from '@/app/ui/skeletons';
 import { Suspense } from 'react';
- import { fetchInvoicesPages } from '@/app/lib/data';
+import { fetchInvoicesPages } from '@/app/lib/data';
+import { Button } from '@/components/ui/button';
 export default async function Page({
   searchParams,
 }: {
@@ -25,11 +27,12 @@ export default async function Page({
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
         <Search placeholder="搜索发票..." />
-        <a href="/api/invoices/csv" className="flex items-center justify-center gap-1 rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600">
-          导出 CSV
-        </a>
+        <Button asChild variant="outline">
+          <a href="/api/invoices/csv">导出 CSV</a>
+        </Button>
         <CreateInvoice />
       </div>
+      <BatchToolbar />
        <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
         <Table query={query} currentPage={currentPage} />
       </Suspense>

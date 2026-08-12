@@ -18,6 +18,16 @@ const users = [
     name: 'User',
     email: 'user@nextmail.com',
     password: '123456', // 下面会 bcrypt 哈希
+    role: 'user',
+  },
+  // 演示管理员账号（RBAC 引导：默认都是 user，用 seed 造第一个 admin）
+  // 登录信息：admin@nextmail.com / 123456
+  {
+    id: '410544b2-4001-4271-9855-fec4b6a6442b', // 末位改 b，避免和上面重复
+    name: 'Admin',
+    email: 'admin@nextmail.com',
+    password: '123456',
+    role: 'admin',
   },
 ];
 
@@ -69,7 +79,7 @@ async function main() {
     await prisma.user.upsert({
       where: { id: user.id },
       update: {},
-      create: { id: user.id, name: user.name, email: user.email, password: hashedPassword },
+      create: { id: user.id, name: user.name, email: user.email, password: hashedPassword, role: user.role },
     });
   }
 

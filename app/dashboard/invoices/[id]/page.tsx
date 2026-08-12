@@ -5,8 +5,10 @@ import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import InvoiceStatus from '@/app/ui/invoices/status';
 import { DeleteDetailInvoice } from '@/app/ui/invoices/buttons';
 import { lusitana } from '@/app/ui/fonts';
+import { Card } from '@/components/ui/card';
 import { fetchInvoiceDetailById } from '@/app/lib/data';
 import { formatCurrency, formatDateToLocal } from '@/app/lib/utils';
+import { auth } from '@/auth';
 import { PencilIcon } from '@heroicons/react/24/outline';
 
 export default async function Page({
@@ -20,6 +22,10 @@ export default async function Page({
   if (!invoice) {
     notFound();
   }
+
+  // 取当前用户角色，传给删除按钮决定显隐
+  const session = await auth();
+  const role = session?.user?.role;
 
   return (
     <main>
@@ -43,11 +49,11 @@ export default async function Page({
           <PencilIcon className="mr-2 h-4" />
           编辑
         </Link>
-        <DeleteDetailInvoice id={invoice.id} />
+        <DeleteDetailInvoice id={invoice.id} role={role} />
       </div>
 
       {/* 发票信息卡片 */}
-      <div className="rounded-xl bg-gray-50 p-6 shadow-sm">
+      <Card className="p-6">
         {/* 客户信息 */}
         <div className="flex items-center gap-4">
           <Image
@@ -84,7 +90,7 @@ export default async function Page({
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </main>
   );
 }

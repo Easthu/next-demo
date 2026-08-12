@@ -7,6 +7,14 @@ import {
 } from '@/app/lib/definitions';
 import Link from 'next/link';
 import { CreateCustomer, UpdateCustomer, DeleteCustomer } from '@/app/ui/customers/buttons';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 export default  function CustomersTable({
   customers,
 }: {
@@ -27,34 +35,34 @@ export default  function CustomersTable({
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full align-middle">
             <div className="overflow-hidden rounded-md bg-gray-50 p-2 md:pt-0">
-              <table className="min-w-full rounded-md text-gray-900">
-                <thead className="rounded-md bg-gray-50 text-left text-sm font-normal">
-                  <tr>
-                    <th scope="col" className="px-4 py-5 font-medium sm:pl-6">
+              <Table className="min-w-full rounded-md text-gray-900">
+                <TableHeader className="rounded-md bg-gray-50 text-left text-sm font-normal">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead scope="col" className="px-4 py-5 font-medium sm:pl-6">
                       姓名
-                    </th>
-                    <th scope="col" className="px-3 py-5 font-medium">
+                    </TableHead>
+                    <TableHead scope="col" className="px-3 py-5 font-medium">
                       邮箱
-                    </th>
-                    <th scope="col" className="px-3 py-5 font-medium">
+                    </TableHead>
+                    <TableHead scope="col" className="px-3 py-5 font-medium">
                       发票数
-                    </th>
-                    <th scope="col" className="px-3 py-5 font-medium">
+                    </TableHead>
+                    <TableHead scope="col" className="px-3 py-5 font-medium">
                       待处理
-                    </th>
-                    <th scope="col" className="px-4 py-5 font-medium">
+                    </TableHead>
+                    <TableHead scope="col" className="px-4 py-5 font-medium">
                       已支付
-                    </th>
-                    <th scope="col" className="relative py-3 pl-6 pr-3">
+                    </TableHead>
+                    <TableHead scope="col" className="relative py-3 pl-6 pr-3">
                       <span className="sr-only">编辑</span>
-                    </th>
-                  </tr>
-                </thead>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                <tbody className="divide-y divide-gray-200 text-gray-900">
+                <TableBody className="divide-y divide-gray-200 text-gray-900">
                   {customers.map((customer) => (
-                    <tr key={customer.id} className="group">
-                      <td className="whitespace-nowrap bg-white py-5 pl-4 pr-3 text-sm text-black group-first-of-type:rounded-md group-last-of-type:rounded-md sm:pl-6">
+                    <TableRow key={customer.id} className="group hover:bg-transparent">
+                      <TableCell className="whitespace-nowrap bg-white py-5 pl-4 pr-3 text-sm text-black group-first-of-type:rounded-md group-last-of-type:rounded-md sm:pl-6">
                         <div className="flex items-center gap-3">
                           <Link href={`/dashboard/customers/${customer.id}`} className="flex items-center gap-3 hover:bg-gray-100 rounded-md">
                           
@@ -68,29 +76,29 @@ export default  function CustomersTable({
                           <p>{customer.name}</p>
                           </Link>
                         </div>
-                      </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-5 text-sm">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap bg-white px-4 py-5 text-sm">
                         {customer.email}
-                      </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-5 text-sm">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap bg-white px-4 py-5 text-sm">
                         {customer.total_invoices}
-                      </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-5 text-sm">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap bg-white px-4 py-5 text-sm">
                         {customer.total_pending}
-                      </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-5 text-sm group-first-of-type:rounded-md group-last-of-type:rounded-md">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap bg-white px-4 py-5 text-sm group-first-of-type:rounded-md group-last-of-type:rounded-md">
                         {customer.total_paid}
-                      </td>
-                      <td className="whitespace-nowrap py-3 pl-6 pr-3">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap py-3 pl-6 pr-3">
                         <div className="flex justify-end gap-3">
                           <UpdateCustomer id={customer.id} />
                           <DeleteCustomer id={customer.id} />
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>

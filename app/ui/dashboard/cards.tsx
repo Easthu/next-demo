@@ -6,6 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { lusitana } from '@/app/ui/fonts';
 import { fetchCardData } from '@/app/lib/data';
+import { Card as ShadcnCard } from '@/components/ui/card';
 const iconMap = {
   collected: BanknotesIcon,
   customers: UserGroupIcon,
@@ -24,10 +25,10 @@ export default async function CardWrapper() {
     <>
       {/* NOTE: Uncomment this code in Chapter 9 */}
 
-      <Card title="已收款" value={totalPaidInvoices} type="collected" />
-      <Card title="待处理" value={totalPendingInvoices} type="pending" />
-      <Card title="总发票数" value={numberOfInvoices} type="invoices" />
-      <Card
+      <StatCard title="已收款" value={totalPaidInvoices} type="collected" />
+      <StatCard title="待处理" value={totalPendingInvoices} type="pending" />
+      <StatCard title="总发票数" value={numberOfInvoices} type="invoices" />
+      <StatCard
         title="总客户数"
         value={numberOfCustomers}
         type="customers"
@@ -36,7 +37,7 @@ export default async function CardWrapper() {
   );
 }
 
-export function Card({
+export function StatCard({
   title,
   value,
   type,
@@ -48,7 +49,7 @@ export function Card({
   const Icon = iconMap[type];
 
   return (
-    <div className="rounded-xl bg-gray-50 p-2 shadow-sm">
+    <ShadcnCard className="rounded-xl bg-gray-50 p-2 shadow-sm">
       <div className="flex p-4">
         {Icon ? <Icon className="h-5 w-5 text-gray-700" /> : null}
         <h3 className="ml-2 text-sm font-medium">{title}</h3>
@@ -59,6 +60,6 @@ export function Card({
       >
         {value}
       </p>
-    </div>
+    </ShadcnCard>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from '@/app/lib/data';
 import { formatCurrency, formatDateToLocal } from '@/app/lib/utils';
 import { DeleteDetailCustomer } from '@/app/ui/customers/buttons';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Customer, Invoice } from '@prisma/client';
 
 export default async function Page({
@@ -61,7 +62,7 @@ export default async function Page({
       </div>
 
       {/* 客户信息卡片 */}
-      <div className="rounded-xl bg-gray-50 p-6 shadow-sm">
+      <Card className="p-6">
         <div className="flex flex-col items-center gap-4 md:flex-row md:items-center">
           <Image
             src={customer.image_url}
@@ -99,7 +100,7 @@ export default async function Page({
             </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 该客户的发票列表 */}
       <div className="mt-6">

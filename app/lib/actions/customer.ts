@@ -1,12 +1,11 @@
 "use server";
-// 客户相关的 Server Actions（创建、更新、删除），和发票的 action.ts 分开管理
+// 客户相关的 Server Actions（创建、更新、删除）
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/app/lib/prisma';
 
-// 6 张已有头像，创建客户时随机分配
 const AVATARS = [
   '/customers/evil-rabbit.png',
   '/customers/delba-de-oliveira.png',
@@ -33,9 +32,13 @@ export type CustomerState = {
     email?: string[];
   };
   message?: string | null;
+  rawInput?: {
+    name?: string | null;
+    email?: string | null;
+  };
 };
 
-// 创建客户：校验 → 随机分配头像 → 写库 → 跳转
+// 创建客户
 export async function createCustomer(prevState: CustomerState, formData: FormData) {
   const validatedFields = CreateCustomer.safeParse({
     name: formData.get('name'),
@@ -46,6 +49,10 @@ export async function createCustomer(prevState: CustomerState, formData: FormDat
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: '有字段未填写或格式不正确，创建客户失败。',
+      rawInput: {
+        name: formData.get('name') as string | null,
+        email: formData.get('email') as string | null,
+      },
     };
   }
 
@@ -53,9 +60,7 @@ export async function createCustomer(prevState: CustomerState, formData: FormDat
   const image_url = AVATARS[Math.floor(Math.random() * AVATARS.length)];
 
   try {
-    await prisma.customer.create({
-      data: { name, email, image_url },
-    });
+    await prisma.customer.create({ data: { name, email, image_url } });
   } catch (error) {
     return { message: '数据库错误：创建客户失败。' };
   }
@@ -64,7 +69,7 @@ export async function createCustomer(prevState: CustomerState, formData: FormDat
   redirect('/dashboard/customers');
 }
 
-// 更新客户：校验 → 写库 → 跳转
+// 更新客户
 export async function updateCustomer(prevState: CustomerState, formData: FormData) {
   const id = formData.get('id') as string;
 
@@ -77,6 +82,10 @@ export async function updateCustomer(prevState: CustomerState, formData: FormDat
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: '有字段未填写或格式不正确，更新客户失败。',
+      rawInput: {
+        name: formData.get('name') as string | null,
+        email: formData.get('email') as string | null,
+      },
     };
   }
 
@@ -96,7 +105,7 @@ export async function updateCustomer(prevState: CustomerState, formData: FormDat
   redirect('/dashboard/customers');
 }
 
-// 删除客户：先检查有没有发票，有的话拒绝删除
+// 删除客户（列表页用，先检查有没有发票）
 export async function deleteCustomer(id: string) {
   const invoiceCount = await prisma.invoice.count({ where: { customer_id: id } });
   if (invoiceCount > 0) {
@@ -113,7 +122,7 @@ export async function deleteCustomer(id: string) {
   revalidatePath('/dashboard/customers');
 }
 
-// 删除客户并跳转（详情页用）：和 deleteCustomer 逻辑一样，多了 redirect
+// 删除客户并跳转（详情页用）
 export async function deleteCustomerAndRedirect(id: string) {
   const invoiceCount = await prisma.invoice.count({ where: { customer_id: id } });
   if (invoiceCount > 0) {

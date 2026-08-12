@@ -1,62 +1,59 @@
 'use client';
 
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import clsx from 'clsx';
 import Link from 'next/link';
-import { generatePagination } from '@/app/lib/utils';
+import { cn, generatePagination } from '@/app/lib/utils';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+
 export default function Pagination({ totalPages }: { totalPages: number }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPage = Number(searchParams.get('page')) || 1;
- const createPageURL = (pageNumber: number | string) => {
+
+  const createPageURL = (pageNumber: number | string) => {
     const params = new URLSearchParams(searchParams);
     params.set('page', pageNumber.toString());
     return `${pathname}?${params.toString()}`;
   };
-  // 注意：第 10 章时取消注释这段代码
 
   const allPages = generatePagination(currentPage, totalPages);
 
   return (
-    <>
-      {/* 注意：第 10 章时取消注释这段代码 */}
+    <div className="inline-flex items-center gap-1">
+      <PaginationArrow
+        direction="left"
+        href={createPageURL(currentPage - 1)}
+        isDisabled={currentPage <= 1}
+      />
 
-      <div className="inline-flex">
-        <PaginationArrow
-          direction="left"
-          href={createPageURL(currentPage - 1)}
-          isDisabled={currentPage <= 1}
-        />
+      <div className="flex -space-x-px">
+        {allPages.map((page, index) => {
+          let position: 'first' | 'last' | 'single' | 'middle' | undefined;
 
-        <div className="flex -space-x-px">
-          {allPages.map((page, index) => {
-            let position: 'first' | 'last' | 'single' | 'middle' | undefined;
+          if (index === 0) position = 'first';
+          if (index === allPages.length - 1) position = 'last';
+          if (allPages.length === 1) position = 'single';
+          if (page === '...') position = 'middle';
 
-            if (index === 0) position = 'first';
-            if (index === allPages.length - 1) position = 'last';
-            if (allPages.length === 1) position = 'single';
-            if (page === '...') position = 'middle';
-
-            return (
-              <PaginationNumber
-                key={`${page}-${index}`}
-                href={createPageURL(page)}
-                page={page}
-                position={position}
-                isActive={currentPage === page}
-              />
-            );
-          })}
-        </div>
-
-        <PaginationArrow
-          direction="right"
-          href={createPageURL(currentPage + 1)}
-          isDisabled={currentPage >= totalPages}
-        />
+          return (
+            <PaginationNumber
+              key={`${page}-${index}`}
+              href={createPageURL(page)}
+              page={page}
+              position={position}
+              isActive={currentPage === page}
+            />
+          );
+        })}
       </div>
-    </>
+
+      <PaginationArrow
+        direction="right"
+        href={createPageURL(currentPage + 1)}
+        isDisabled={currentPage >= totalPages}
+      />
+    </div>
   );
 }
 
@@ -71,23 +68,34 @@ function PaginationNumber({
   position?: 'first' | 'last' | 'middle' | 'single';
   isActive: boolean;
 }) {
-  const className = clsx(
-    'flex h-10 w-10 items-center justify-center text-sm border',
-    {
-      'rounded-l-md': position === 'first' || position === 'single',
-      'rounded-r-md': position === 'last' || position === 'single',
-      'z-10 bg-blue-600 border-blue-600 text-white': isActive,
-      'hover:bg-gray-100': !isActive && position !== 'middle',
-      'text-gray-300': position === 'middle',
-    },
-  );
+  if (isActive || position === 'middle') {
+    return (
+      <Button
+        variant={isActive ? 'default' : 'ghost'}
+        size="icon"
+        disabled={position === 'middle'}
+        className={cn(
+          'rounded-none',
+          position === 'first' && 'rounded-l-md',
+          position === 'last' && 'rounded-r-md',
+          position === 'middle' && 'text-muted-foreground',
+        )}
+      >
+        {page}
+      </Button>
+    );
+  }
 
-  return isActive || position === 'middle' ? (
-    <div className={className}>{page}</div>
-  ) : (
-    <Link href={href} className={className}>
-      {page}
-    </Link>
+  return (
+    <Button variant="outline" size="icon" asChild
+      className={cn(
+        'rounded-none',
+        position === 'first' && 'rounded-l-md',
+        position === 'last' && 'rounded-r-md',
+      )}
+    >
+      <Link href={href}>{page}</Link>
+    </Button>
   );
 }
 
@@ -100,28 +108,28 @@ function PaginationArrow({
   direction: 'left' | 'right';
   isDisabled?: boolean;
 }) {
-  const className = clsx(
-    'flex h-10 w-10 items-center justify-center rounded-md border',
-    {
-      'pointer-events-none text-gray-300': isDisabled,
-      'hover:bg-gray-100': !isDisabled,
-      'mr-2 md:mr-4': direction === 'left',
-      'ml-2 md:ml-4': direction === 'right',
-    },
-  );
-
   const icon =
     direction === 'left' ? (
-      <ArrowLeftIcon className="w-4" />
+      <ArrowLeftIcon className="h-4 w-4" />
     ) : (
-      <ArrowRightIcon className="w-4" />
+      <ArrowRightIcon className="h-4 w-4" />
     );
 
-  return isDisabled ? (
-    <div className={className}>{icon}</div>
-  ) : (
-    <Link className={className} href={href}>
-      {icon}
-    </Link>
+  if (isDisabled) {
+    return (
+      <Button variant="outline" size="icon" disabled
+        className={direction === 'left' ? 'mr-2 md:mr-4' : 'ml-2 md:ml-4'}
+      >
+        {icon}
+      </Button>
+    );
+  }
+
+  return (
+    <Button variant="outline" size="icon" asChild
+      className={direction === 'left' ? 'mr-2 md:mr-4' : 'ml-2 md:ml-4'}
+    >
+      <Link href={href}>{icon}</Link>
+    </Button>
   );
 }

@@ -2,6 +2,7 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { lusitana } from '@/app/ui/fonts';
+import { Card } from '@/components/ui/card';
 // import { LatestInvoice } from '@/app/lib/definitions';
 import { fetchLatestInvoices } from '@/app/lib/data';
 // export default async function LatestInvoices({
@@ -11,13 +12,12 @@ import { fetchLatestInvoices } from '@/app/lib/data';
 // }) {
 export default async function LatestInvoices() { // 移除 props，改为自己取数
   const latestInvoices = await fetchLatestInvoices();
-  // console.log('latestInvoices :>> ', latestInvoices);
   return (
     <div className="flex w-full flex-col md:col-span-4">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
         最新发票
       </h2>
-      <div className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">
+      <Card className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">
         {/* 注意：第 7 章时取消注释这段代码 */}
 
         <div className="bg-white px-6">
@@ -62,7 +62,7 @@ export default async function LatestInvoices() { // 移除 props，改为自己�
           <ArrowPathIcon className="h-5 w-5 text-gray-500" />
           <h3 className="ml-2 text-sm text-gray-500 ">Updated just now</h3>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
