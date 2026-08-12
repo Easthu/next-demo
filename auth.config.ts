@@ -7,22 +7,31 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       console.log('auth:', auth);
-      console.log('nextUrl:', nextUrl);
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-      // 用户管理页（/dashboard/users）只有 admin 能进
-      // 注意：这里的 auth.user.role 来自 token —— 必须等 jwt 回调把 role 塞进 token 后才有值
-      const isOnUsersPage = nextUrl.pathname.startsWith('/dashboard/users');
-      if (isOnUsersPage && auth?.user?.role !== 'admin') {
+      const { pathname } = nextUrl;
+
+      // ① dashboard 系列路由：必须登录
+      if (pathname.startsWith('/dashboard')) {
+        if (!isLoggedIn) return false; // 未登录 → NextAuth 自动跳 pages.signIn（/login）
+        // 用户管理页：只有 admin 能进（role 来自 token，需 jwt 回调已写入）
+        if (pathname.startsWith('/dashboard/users') && auth?.user?.role !== 'admin') {
+          return Response.redirect(new URL('/dashboard', nextUrl));
+        }
+        return true;
+      }
+
+      // ② 已登录但访问非 dashboard（首页 /、登录页 /login 等）→ 直接去 dashboard
+      if (isLoggedIn) {
         return Response.redirect(new URL('/dashboard', nextUrl));
       }
-      if (isOnDashboard) {
-        if (isLoggedIn) return true;
-        return false; // 未登录用户重定向到登录页
-      } else if (isLoggedIn) {
-        return Response.redirect(new URL('/dashboard', nextUrl));
+
+      // ③ 未登录访问公开页（/login、/register）→ 放行
+      if (pathname === '/login' || pathname === '/register') {
+        return true;
       }
-      return true;
+
+      // ④ 未登录访问其他页（如首页 /）→ 跳登录页
+      return Response.redirect(new URL('/login', nextUrl));
     },
     // ───────────────────────────────────────────────────────────
     // ⭐ 核心考点：把数据库里的 role 搬进 session（两棒接力）
