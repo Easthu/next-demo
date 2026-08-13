@@ -1,7 +1,26 @@
-import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  DocumentArrowDownIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { deleteInvoice, deleteInvoiceAndRedirect } from '@/app/lib/actions/invoice';
 import { Button } from '@/components/ui/button';
+
+// 导出 PDF 按钮 —— 就是一个普通 <a download>，指向 PDF 路由
+// 浏览器看到 download 属性 + 响应头 Content-Disposition: attachment，
+// 就会直接下载文件而非跳转页面。不需要 fetch / Server Action / use client。
+export function ExportInvoicePdf({ id }: { id: string }) {
+  return (
+    <Button asChild variant="outline">
+      <a href={`/api/invoices/${id}/pdf`} download>
+        <DocumentArrowDownIcon className="mr-2 h-4" />
+        导出 PDF
+      </a>
+    </Button>
+  );
+}
 
 export function CreateInvoice() {
   return (

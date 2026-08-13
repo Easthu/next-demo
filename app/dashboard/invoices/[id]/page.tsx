@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import InvoiceStatus from '@/app/ui/invoices/status';
-import { DeleteDetailInvoice } from '@/app/ui/invoices/buttons';
+import { DeleteDetailInvoice, ExportInvoicePdf } from '@/app/ui/invoices/buttons';
 import { lusitana } from '@/app/ui/fonts';
 import { Card } from '@/components/ui/card';
 import { fetchInvoiceDetailById } from '@/app/lib/data';
@@ -40,8 +40,9 @@ export default async function Page({
         ]}
       />
 
-      {/* 操作栏：编辑 + 删除 */}
+      {/* 操作栏：导出 PDF + 编辑 + 删除 */}
       <div className="mb-4 flex justify-end gap-3">
+        <ExportInvoicePdf id={invoice.id} />
         <Link
           href={`/dashboard/invoices/${id}/edit`}
           className="flex h-10 items-center rounded-lg border px-4 text-sm font-medium hover:bg-gray-100"

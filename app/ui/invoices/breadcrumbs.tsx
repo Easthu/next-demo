@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { clsx } from 'clsx';
 import Link from 'next/link';
 import { lusitana } from '@/app/ui/fonts';
@@ -29,21 +30,22 @@ export default function Breadcrumbs({
         {breadcrumbs.map((breadcrumb, index) => {
           const isLast = index === breadcrumbs.length - 1;
           return (
-            <BreadcrumbItem
-              key={breadcrumb.href}
-              className={clsx(
-                breadcrumb.active ? 'text-gray-900' : 'text-gray-500',
-              )}
-            >
-              {breadcrumb.active ? (
-                <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link href={breadcrumb.href}>{breadcrumb.label}</Link>
-                </BreadcrumbLink>
-              )}
+            <Fragment key={breadcrumb.href}>
+              <BreadcrumbItem
+                className={clsx(
+                  breadcrumb.active ? 'text-gray-900' : 'text-gray-500',
+                )}
+              >
+                {breadcrumb.active ? (
+                  <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href={breadcrumb.href}>{breadcrumb.label}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
               {!isLast && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
-            </BreadcrumbItem>
+            </Fragment>
           );
         })}
       </BreadcrumbList>

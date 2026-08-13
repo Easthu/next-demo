@@ -5,6 +5,7 @@ import {
   ArrowUpCircleIcon,
   FileText,
   LayoutDashboard,
+  Radio,
   UserCog,
   Users,
 } from "lucide-react"
@@ -40,6 +41,7 @@ export function AppSidebar({
     { title: "首页", url: "/dashboard", icon: LayoutDashboard },
     { title: "发票", url: "/dashboard/invoices", icon: FileText },
     { title: "客户", url: "/dashboard/customers", icon: Users },
+    { title: "SSE 实时推送", url: "/dashboard/sse-demo", icon: Radio },
     // RBAC：普通用户看不到这一项（UI 层显隐，方式 B —— role 从父组件 prop 接）
     ...(role === "admin"
       ? [{ title: "用户管理", url: "/dashboard/users", icon: UserCog }]
