@@ -2,6 +2,7 @@
 // 它描述了数据的结构，以及每个属性应接受的数据类型。
 // 为了教学简单，我们手动定义了这些类型。
 // 如果使用 ORM（如 Prisma），这些类型会自动生成。
+import { z } from 'zod';
 export type User = {
   id: string;
   name: string;
@@ -86,3 +87,17 @@ export type InvoiceForm = {
   amount: number;
   status: 'pending' | 'paid';
 };
+
+// 记账本表单校验 schema（create-form 客户端 和 createTransaction action 服务端共用一份，双保险）
+export const createTransactionSchema = z.object({
+  amount: z.coerce.number().min(0.01, { message: '金额必须大于 0' }), // coerce：number 输入框给的是字符串，先转再验
+  type: z.string({ message: '请选择类型' }),
+  categoryId: z.number().int().positive({ message: '请选择分类' }),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: '请输入有效的日期',
+  }),
+  description: z.string().optional(),
+});
+
+// 表单值的 TS 类型——由 schema 推导，不手写（手写会漂移）
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;

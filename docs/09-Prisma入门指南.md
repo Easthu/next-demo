@@ -143,12 +143,13 @@ prisma.Customer    // ❌ 错！这是 model 名（大写），查询时不能�
 
 ### 第 3 部分：方法名
 
-`表名.` 后面跟"你想做什么操作"。最常用的就 6 个，记这几个够了：
+`表名.` 后面跟"你想做什么操作"。最常用的就 7 个，记这几个够了：
 
 | 方法 | 干什么 | 对应的 SQL |
 |------|--------|-----------|
-| `findMany()` | 查多条 | `SELECT * FROM ...` |
-| `findUnique({ where: { id } })` | 按主键查一条 | `SELECT ... WHERE id = ...` |
+| `findMany()` | 查多条（返回**数组**） | `SELECT * FROM ...` |
+| `findFirst({ where, orderBy })` | 按条件查**第一条**（返回单条或 null） | `SELECT ... WHERE ... ORDER BY ... LIMIT 1` |
+| `findUnique({ where: { id } })` | 按**唯一字段**查一条（返回单条或 null） | `SELECT ... WHERE id = ...` |
 | `create({ data })` | 新增一条 | `INSERT INTO ...` |
 | `update({ where, data })` | 修改一条 | `UPDATE ... SET ... WHERE ...` |
 | `delete({ where })` | 删除一条 | `DELETE FROM ... WHERE ...` |
@@ -171,6 +172,110 @@ prisma.invoice.create({ data: { amount: 100, status: 'paid', ... } })
 ```
 
 **就这么简单。三部分拼起来，Prisma 帮你翻译。**
+
+### 三个 find 怎么选（最容易混）
+
+上面表里有三个 `find`，初学者常搞混。记住一句话：**返回数组还是单条？条件必须是唯一字段吗？**
+
+| 方法 | 返回 | 条件要求 | 什么时候用 |
+|------|------|---------|-----------|
+| `findMany()` | **数组** `[]` | 任意条件 | 查多条（列表页） |
+| `findFirst()` | **单条** 或 `null` | **任意条件** | 按条件查一条（最新一条、随机一条） |
+| `findUnique()` | **单条** 或 `null` | **只能唯一字段**（id 或 @unique） | 按主键精确查 |
+
+**关键区别**：
+
+- `findUnique` **只能用唯一字段**（id、email 这种标了 `@unique` 的）。写 `findUnique({ where: { status: 'paid' } })` 会**直接报错**——status 不是唯一字段。
+- `findFirst` 能用**任意条件**，返回第一条匹配。配合 `orderBy` 就是"查最新一条 / 最旧一条"。
+
+**真实例子（本项目 SSE 端点 `app/api/sse/invoices/route.ts`）**：
+
+```ts
+// 查最新一张发票——没有唯一字段可用（不是按 id 查），用 findFirst + orderBy
+const latest = await prisma.invoice.findFirst({
+  orderBy: { date: 'desc' },
+});
+// → SELECT * FROM invoices ORDER BY date DESC LIMIT 1
+```
+
+如果用 `findMany`，会返回数组，你还得写 `result[0]`，多此一举。`findFirst` 就是为这种场景设计的。
+
+> **经验法则**：能按 id 查就用 `findUnique`（性能最好，Prisma 知道最多一条不用遍历）；按其他条件查一条才用 `findFirst`。
+
+---
+
+### 写入操作全家桶（create / update / delete 及变体）
+
+查询有三个 `find`，写入也有一整套。一次列全，别再漏：
+
+**单条写入**：
+
+| 方法 | 干什么 | 找不到时 |
+|------|--------|---------|
+| `create({ data })` | 新增一条 | — |
+| `update({ where, data })` | 改一条 | **抛错**（where 必须能找到） |
+| `delete({ where })` | 删一条 | **抛错**（where 必须能找到） |
+| `upsert({ where, create, update })` | 存在则改，不存在则建 | — |
+
+**批量写入**：
+
+| 方法 | 干什么 |
+|------|--------|
+| `createMany({ data: [...] })` | 一次插入多条 |
+| `updateMany({ where, data })` | 改所有匹配的（本项目 `bulkUpdateInvoiceStatus` 用了） |
+| `deleteMany({ where })` | 删所有匹配的 |
+
+挑几个容易混的讲：
+
+#### `upsert`——存在则更新，不存在则创建
+
+很常用。比如"记录用户登录：有就更新时间，没有就新建"：
+
+```ts
+await prisma.user.upsert({
+  where: { email: 'a@b.com' },
+  update: { lastLogin: new Date() },                    // 已存在 → 执行这个
+  create: { email: 'a@b.com', name: 'A', lastLogin: new Date() },  // 不存在 → 执行这个
+});
+```
+
+比"先 `findUnique` 再判断 `create`/`update`"简洁，而且是**原子操作**（不会并发冲突）。
+
+#### `createMany`——批量插入
+
+```ts
+await prisma.invoice.createMany({
+  data: [
+    { amount: 100, status: 'paid', customerId: 'c1', date: new Date() },
+    { amount: 200, status: 'pending', customerId: 'c2', date: new Date() },
+  ],
+});
+```
+
+⚠️ `createMany` **不支持嵌套创建**（不能 `include` 关联数据），只能插单表批量。要连同关联数据一起建，用多个 `create` + `$transaction`。
+
+#### `*OrThrow` 系列——找不到就抛错
+
+`findUnique` 默认找不到返回 `null`。如果你**确信数据该存在**、不存在就是 bug，用 `OrThrow` 变体让它尽早抛错：
+
+```ts
+const inv = await prisma.invoice.findUniqueOrThrow({ where: { id } });
+// 找不到 → 抛错（而不是返回 null，让后续代码崩在别处）
+```
+
+变体：`findFirstOrThrow`、`findUniqueOrThrow`、`updateManyOrThrow`、`deleteManyOrThrow` 等。**适用**：查必须存在的记录时，让错误尽早暴露。
+
+#### `$transaction`——事务（多条要么全成，要么全废）
+
+```ts
+await prisma.$transaction([
+  prisma.invoice.update({ where: { id: '1' }, data: { status: 'paid' } }),
+  prisma.customer.update({ where: { id: 'c1' }, data: { paidCount: { increment: 1 } } }),
+]);
+// 任一失败 → 全部回滚
+```
+
+**适用**：转账、扣库存等"多步必须同时成功"的场景。还有 `$queryRaw`（直接写原生 SQL），偶尔需要绕过 Prisma 时用。
 
 ---
 
@@ -811,6 +916,7 @@ const result = topCustomers.map(r => ({
 |-----------|-----------|--------|
 | 查全部 | `SELECT * FROM invoices` | `prisma.invoice.findMany()` |
 | 按 id 查一条 | `SELECT * FROM invoices WHERE id='x'` | `prisma.invoice.findUnique({ where: { id } })` |
+| 按条件查一条（如最新一条） | `SELECT * FROM invoices ORDER BY date DESC LIMIT 1` | `prisma.invoice.findFirst({ orderBy: { date: 'desc' } })` |
 | 条件查询 | `SELECT * FROM invoices WHERE status='paid'` | `prisma.invoice.findMany({ where: { status: 'paid' } })` |
 | 排序 | `...ORDER BY date DESC` | `orderBy: { date: 'desc' }` |
 | 取前 N 条 | `...LIMIT 5` | `take: 5` |
@@ -819,8 +925,12 @@ const result = topCustomers.map(r => ({
 | 求和 | `SELECT SUM(amount) ... WHERE status='paid'` | `prisma.invoice.aggregate({ where: {status:'paid'}, _sum: { amount: true } })` |
 | 关联查询（JOIN） | `JOIN customers ON...` | `include: { customer: true }` |
 | 新增 | `INSERT INTO invoices (...) VALUES (...)` | `prisma.invoice.create({ data: {...} })` |
+| 批量新增 | `INSERT INTO invoices (...) VALUES (...),(...)` | `prisma.invoice.createMany({ data: [...] })` |
+| 存在则改/不存在则建 | `INSERT ... ON CONFLICT ... DO UPDATE` | `prisma.invoice.upsert({ where, update, create })` |
 | 修改 | `UPDATE invoices SET ... WHERE id='x'` | `prisma.invoice.update({ where: { id }, data: {...} })` |
+| 批量修改 | `UPDATE invoices SET status='paid' WHERE id IN (...)` | `prisma.invoice.updateMany({ where: { id: { in: ids } }, data: { status } })` |
 | 删除 | `DELETE FROM invoices WHERE id='x'` | `prisma.invoice.delete({ where: { id } })` |
+| 批量删除 | `DELETE FROM invoices WHERE status='pending'` | `prisma.invoice.deleteMany({ where: { status: 'pending' } })` |
 
 ---
 
@@ -873,13 +983,19 @@ Prisma 是翻译官，你说 JS，它翻译成 SQL。
     take: 数字,          // 限制条数
   })
 
-六个方法：
-  findMany  查多条
-  findUnique  查一条
+七个方法：
+  findMany  查多条（返回数组）
+  findFirst  按条件查一条（最新/最旧一条）
+  findUnique  按唯一字段查一条（id/@unique）
   create  新增
   update  修改
   delete  删除
   count  数数
+  批量：updateMany（批量改）/ deleteMany（批量删）/ createMany（批量插，不支持嵌套）
+  upsert  存在则改，不存在则建
+  *OrThrow  findUniqueOrThrow / findFirstOrThrow 等，找不到就抛错
+  $transaction  事务（多条要么全成要么全废）
+  $queryRaw  原生 SQL（偶尔绕过 Prisma 时用）
 
 聚合查询（统计）：
   count()      数数（COUNT）

@@ -57,3 +57,36 @@ model Revenue {
 
   @@map("revenue")
 }
+
+// 交易表（记账本核心表）
+model Transaction {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  amount      Int      // 存"分"（整数），避免浮点精度问题；显示时 /100 转元
+  type        String   @db.VarChar(20) // 'income' | 'expense'（数据库层是字符串，应用层用 Zod 约束）
+  category_id Int      // 外键 → transaction_categories.id
+  date        DateTime @db.Date // 交易发生日（只有日期，没有时间）
+  description String?  @db.VarChar(255) // 备注，可空
+  category    TransactionCategory @relation(fields: [category_id], references: [id])
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  @@index([date])        // 按日期查账本最常见
+  @@index([type])        // 筛选收入/支出
+  @@index([category_id]) // 按类别筛选
+  @@map("transactions")
+}
+// 交易分类表（如 餐饮/交通/工资；同一分类名可分别存在于收入、支出两侧）
+model TransactionCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  type        String   @db.VarChar(20) // 'income' | 'expense'（数据库层是字符串，应用层用 Zod 约束）
+  description String?  @db.VarChar(255)
+  is_system   Boolean  @default(false) // 系统预设 vs 用户自定义
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+  Transaction Transaction[]
+
+  @@unique([name, type])
+  @@map("transaction_categories")
+}
+

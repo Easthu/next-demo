@@ -46,6 +46,7 @@ export function AppSidebar({
     ...(role === "admin"
       ? [{ title: "用户管理", url: "/dashboard/users", icon: UserCog }]
       : []),
+    {title: "账单", url: "/dashboard/transactions", icon: ArrowUpCircleIcon},
   ]
 
   return (
