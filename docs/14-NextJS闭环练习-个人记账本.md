@@ -70,6 +70,9 @@
 ## 六、Day 1-7 详细计划
 
 > 每天 2-3 小时。每天结束对照"当日产出"自检。
+>
+> 每个 Day 附了 **📁 文件清单**：标明这一步要**新建/修改哪些文件、每个文件干什么**。
+> ⚠️ 它是**路标不是答案**——告诉你动哪里，不告诉你怎么写（规则 1"从空文件开始"依然生效）。
 
 ### 📅 Day 1 —— 数据层打通
 
@@ -80,6 +83,13 @@
 - [ ] 跑迁移（`prisma` 的迁移命令自己查）
 - [ ] 写第一个 Server Action：`createTransaction`，先不接 UI
 - [ ] 用 `prisma studio` 或手写 seed 塞 2-3 条测试数据，验证写库成功
+
+**📁 文件清单**
+| 动作 | 文件 | 干什么 |
+|---|---|---|
+| 修改 | `prisma/schema.prisma` | 新增 `Transaction` 模型；分类建议独立建 `TransactionCategory` 表（外键关联），别写死字符串 |
+| 修改 | seed 脚本（`prisma/` 下） | 塞一组分类 + 2-3 条测试交易 |
+| 新建 | `app/lib/actions/transaction.ts` | 第一个 Server Action：`createTransaction`（Zod 校验 + 元转分 + 写库） |
 
 **🤔 该想的坑**
 - 金额字段类型定了吗？为什么？
@@ -98,6 +108,14 @@
 - [ ] 金额列怎么显示？（**复习**：金额在库里是整数，展示时怎么变成 `¥12.34`？）
 - [ ] 顶部加 3 张汇总卡：当月收入、当月支出、结余（收入−支出）
 
+**📁 文件清单**
+| 动作 | 文件 | 干什么 |
+|---|---|---|
+| 新建 | `app/lib/data/transaction.ts` | 查询层：`fetchTransactions`（列表，include 分类）、`fetchMonthlySummary`（aggregate 汇总） |
+| 新建 | `app/dashboard/transactions/page.tsx` | 列表页：async 服务端组件，Table + 汇总卡 |
+| 修改 | `components/app-sidebar.tsx` | 左侧导航加"账单"入口 |
+| 复用 | `app/lib/utils.ts` | `formatCurrency`（分→元显示，不要自己再写一个） |
+
 **🤔 该想的坑（高频坑 #2）**
 - 列表页是 `async` 服务端组件（要取数），但里面的"新增""删除"按钮要 `onClick`（client）。**这两个能放同一个文件吗？怎么拆？**
 
@@ -114,6 +132,14 @@
 - [ ] 写 Zod schema：金额必填且 > 0、类型只能两个值、日期必填
 - [ ] 表单提交接到 Day 1 的 Server Action
 - [ ] 提交成功后列表自动刷新（查 `revalidatePath` 怎么用）
+
+**📁 文件清单**
+| 动作 | 文件 | 干什么 |
+|---|---|---|
+| 修改 | `app/lib/definitions.ts` | `createTransactionSchema`（Zod）+ `z.infer` 推导表单类型（不手写） |
+| 新建 | `app/ui/transactions/transaction-form.tsx` | 表单组件（client）：RHF + zodResolver + `my-form` 封装（MyInput/MyRadioGroup/MySelect） |
+| 新建 | `app/dashboard/transactions/create/page.tsx` | 新增页：Breadcrumbs + 服务端查分类下拉 → props 传给表单 |
+| 修改 | `app/lib/actions/transaction.ts` | `createTransaction` 完善：失败返回错误对象、成功 revalidatePath + redirect（⚠️ redirect 在 try 外） |
 
 **🤔 该想的坑（高频坑 #3）**
 - `<form action={fn}>` 里的 `fn` 如果 `return { message: "..." }` 会怎样？为什么必须返回 `void`？校验失败想给用户看错误，应该用什么机制？
@@ -132,6 +158,16 @@
 - [ ] 错误处理：校验失败怎么显示？删除失败/数据库报错怎么办？
 - [ ] 边界：空列表状态、金额输入非数字、日期格式错
 
+**📁 文件清单**
+| 动作 | 文件 | 干什么 |
+|---|---|---|
+| 修改 | `app/ui/transactions/transaction-form.tsx` | 改造成新增/编辑**共享**：props 传不传 `transaction` 区分模式；编辑回填注意**分→元、Date→本地 YYYY-MM-DD** 两处转换 |
+| 新建 | `app/dashboard/transactions/[id]/edit/page.tsx` | 编辑页：查原数据 + 分类下拉 → props 传给表单 |
+| 修改 | `app/lib/data/transaction.ts` | 加 `fetchTransactionById` |
+| 修改 | `app/lib/actions/transaction.ts` | 加 `updateTransaction`（差异：where + P2025）、`deleteTransaction`（id 放签名最前给 bind 留位） |
+| 新建 | `app/ui/transactions/delete-button.tsx` | 删除按钮（client）：`useActionState` + `action.bind(null, id)` + confirm + toast |
+| 修改 | `app/dashboard/transactions/page.tsx` | 加操作列：编辑 Link + 删除按钮 |
+
 **🤔 该想的坑（高频坑 #4、#5）**
 - 编辑表单要把记录 id 传给 action——用 `.bind(id)` 还是 hidden `<input>`？为什么其中一个会让 `useActionState` 出问题？
 - 打开编辑弹窗改了一条，又打开另一条，表单数据为什么没跟着变？（`defaultValue` 的什么特性？）
@@ -149,6 +185,12 @@
 - [ ] 支出按分类分组（哪个分类花最多）—— 用 Prisma 的 `groupBy` / `aggregate`
 - [ ] 简单展示分类统计（表格或进度条都行）
 
+**📁 文件清单**
+| 动作 | 文件 | 干什么 |
+|---|---|---|
+| 修改 | `app/lib/data/transaction.ts` | `fetchMonthlySummary` 加月份范围参数（`where: { date: { gte, lte } }`）；新增分类分组统计查询（`groupBy`） |
+| 修改 | `app/dashboard/transactions/page.tsx` | 月份切换器（URL 参数驱动，和筛选/分页同一条链路）+ 分类统计展示 |
+
 **🤔 该想的坑**
 - 汇总数据从哪算最快——在 JS 里把列表循环累加，还是让数据库直接算？为什么？哪种在大数据量下差别大？
 
@@ -164,6 +206,12 @@
 - [ ] UI 收尾（不用花哨，但完整、不丑）
 - [ ] 完整走一遍流程：增删改查、切月、看统计、空数据、错误输入
 - [ ] **🎯 核心自测**：对着代码，每块讲一遍"为什么这么写"，讲不出的标出来回去想
+
+**📁 文件清单**
+| 动作 | 文件 | 干什么 |
+|---|---|---|
+| 修改 | 各表单组件 | 失败提示接 toast（sonner，layout 已挂 Toaster）——别只 console.error，用户看不到控制台 |
+| 可选新建 | `app/lib/actions/db-error.ts` | 数据库错误统一兜底 `handleDbError`：业务错误码（P2002/P2003/P2025）各 action 就地判，系统错误统一收口（练横切提取） |
 
 **✅ 当日产出**：一个完整能用的记账本 + 一份"哪块讲不清"的清单。
 
@@ -183,7 +231,65 @@
 
 ---
 
-## 七、5 个高频坑清单
+### 🗺️ 附：文件全景图（实战复盘）
+
+只走 Day 1-6 基础链路约 **15 个文件**。实际做完（含下面的扩展子模块）触达 **25+ 个文件**——"感觉改了二三十个文件"不是错觉，一个完整 CRUD 闭环的体量就是这样。
+
+**新建（14 个）**
+
+| 文件 | 职责 |
+|---|---|
+| `app/lib/data/transaction.ts` | 交易 + 分类的查询层（列表/分页/筛选/单查/聚合，7 个函数 + PAGE_SIZE） |
+| `app/lib/actions/transaction.ts` | 记账本域全部 Server Action（交易增删改 3 + 分类增删改 3 + 共享实现 1） |
+| `app/lib/actions/db-error.ts` | 数据库错误统一兜底 `handleDbError`（横切提取） |
+| `app/dashboard/transactions/page.tsx` | 交易列表（表格 + 汇总 + 分类筛选 + 分页 + 操作列） |
+| `app/dashboard/transactions/create/page.tsx` | 新增交易页 |
+| `app/dashboard/transactions/[id]/edit/page.tsx` | 编辑交易页（查原数据回填） |
+| `app/dashboard/transactions/categories/page.tsx` | 分类列表（分页）※扩展 |
+| `app/dashboard/transactions/categories/create/page.tsx` | 新增分类页 ※扩展 |
+| `app/dashboard/transactions/categories/[id]/edit/page.tsx` | 编辑分类页 ※扩展 |
+| `app/ui/transactions/transaction-form.tsx` | 交易表单（新增/编辑共享，含类型联动） |
+| `app/ui/transactions/category-form.tsx` | 分类表单（新增/编辑共享）※扩展 |
+| `app/ui/transactions/delete-button.tsx` | 交易删除按钮（useActionState + bind） |
+| `app/ui/transactions/delete-category-button.tsx` | 分类删除按钮（同款模式）※扩展 |
+| `components/ui/textarea.tsx` | shadcn 组件（`pnpm dlx shadcn@latest add textarea`） |
+
+**修改（8 个）**
+
+| 文件 | 改了什么 |
+|---|---|
+| `prisma/schema.prisma` | `Transaction` + `TransactionCategory` 两张表（含 `@@unique`、外键） |
+| seed 脚本 | 分类 + 交易测试数据 |
+| `app/lib/definitions.ts` | 两个 Zod schema + `z.infer` 类型（一份规则三处消费） |
+| `components/my-form.tsx` | 新增 `MyTextarea` 封装 |
+| `components/app-sidebar.tsx` | 侧边栏入口（账单 / 分类管理） |
+| `app/dashboard/transactions/page.tsx`（多轮迭代） | 汇总卡 → 分页 → 分类筛选 → 操作列 |
+| `app/ui/transactions/transaction-form.tsx`（多轮迭代） | 新增版 → 编辑合并版（回填转换 + 联动坑修复） |
+| `app/lib/actions/transaction.ts`（多轮迭代） | 每个 action：校验 → 错误码分支 → handleDbError 接线 |
+
+**复用（只 import，0 修改）——表单和列表页依赖的现成 UI 组件**
+
+| 文件 | 用在哪 |
+|---|---|
+| `components/my-form.tsx` 的 `MyInput` / `MyRadioGroup` / `MySelect` | 两个表单的字段封装（自己造的 el-form-item 等价物，基于 `useFormContext` 从 Context 拿 form 实例） |
+| `components/ui/form.tsx` | RHF 的桥：`<Form {...form}>` provide 实例 + `FormMessage` 显示校验错误 |
+| `components/ui/table.tsx` 系 | 两个列表页的表格 |
+| `components/ui/button.tsx` / `input.tsx` / `radio-group.tsx` / `select.tsx` | 表单与按钮的基础件（封装层下面那层） |
+| `components/ui/sonner.tsx` | toast 提示（Toaster 挂在根 layout，失败提示用它） |
+| `app/ui/invoices/breadcrumbs.tsx` | 四个 create/edit 页的面包屑（跨模块复用） |
+
+**另有 3 个走过弯路后删除的文件**（新增分类弹窗 ×1、拆开的两个表单 ×2）——方案演进（弹窗 → 独立页面；分开 → 共享）的正常代价，复盘时反而最有讲头。弯路期还 `shadcn add` 过 `dialog.tsx`，装了最终没用上，文件留在 `components/ui/` 里。
+
+> ※扩展 = **分类管理子模块**：练习时自然会冒出来的需求（分类不能只有写死的几个），
+> 它是 Day 1-4 全套流程的**第二次独立练习**——同样的 schema/action/表单/删除再来一遍，
+> 但多了两个新知识点：业务规则校验（is_system 系统预设不许删）和外键约束错误（P2003）。
+> 时间够建议做，这是"从能做一遍到能做第二遍"的质变。
+
+---
+
+## 七、高频坑清单
+
+### 预设的 5 个（练习前就知道会踩）
 
 这 5 个都踩过。这次遇到**先自己想**，想不通再问 AI（会被反问）。
 
@@ -194,6 +300,22 @@
 | 3 | **`<form action>` 的返回值** | action `return { message }` 会怎样？为什么必须 void？错误怎么显示？ |
 | 4 | **编辑表单传 id** | `useActionState` + 已有记录 id，用 `.bind()` 还是 hidden input？为什么 bind 会出问题？ |
 | 5 | **编辑表单 defaultValue 不更新** | 改一条又打开另一条，表单为啥没变？`defaultValue` 的什么特性？怎么解？ |
+
+### 实战追加的 10 个（真做完才知道的）
+
+编号接着上面。前三个是本次实战中**重复率最高**的（抄漏改栽了三次、FormData 顶参数位排查了一整轮）。
+
+| # | 坑 | 提示 |
+|---|---|---|
+| 6 | **抄模板漏改实体** | 从别的模块抄代码，结构不会抄错，**实体绑定**最容易被漏。抄完必查四件套：模型名（`transaction` ≠ `transactionCategory`）、错误文案（"删除分类失败"出现在交易 action 里）、revalidatePath 路径、业务错误码 |
+| 7 | **form action 裸绑带参 action** | `<form action={fn}>` 提交时把 **FormData 传给第一个参数**——签名是 `(id)` 的 action 拿到 FormData 当 id 用，报一堆莫名其妙的错。修法：id 放签名最前 + `.bind(null, id)`（bind 只能预填前面的参数），或 hidden input 从 FormData 取 |
+| 8 | **useActionState 的 action 必须返回 state** | 成功路径跑完不写 `return`，TS 报 `No overload matches`；补 `return { success: true, message: '' }`——按钮的 useEffect 也靠它区分成败 |
+| 9 | **resetField ≠ 清空** | 它的语义是"重置回**表单初始值**"——新增模式初始是 undefined，看起来是清空；编辑模式初始是回填值，**等于没清**，还会造成"下拉看着空、值还在"的视觉欺骗（options 变了显示不出旧 id，校验却通过）。编辑场景用 `form.reset({ ...form.getValues(), field: undefined })` |
+| 10 | **Radix Select 的 value=undefined 是"非受控"** | 从有值清回 undefined，placeholder 不恢复（内部记忆残留）——封装层用 `key` 强制重挂载解决 |
+| 11 | **日期回填用 toISOString() 会差一天** | 它是 UTC：东八区凌晨存的日期回填成前一天。按本地时区手动拼 `YYYY-MM-DD`（`getFullYear/getMonth/getDate`） |
+| 12 | **z.string() 裸奔** | 值域固定的字段写 `z.string()` 等于没约束（`'abc'` 也能过）。该用 `z.enum(['income', 'expense'])`；写完 schema 扫一遍：每个字段的约束是否表达了真实业务规则 |
+| 13 | **数据库错误码三兄弟** | P2002 唯一约束重名 / P2003 外键被引用 / P2025 目标不存在——catch 里 `instanceof Prisma.PrismaClientKnownRequestError` + `error.code` 分支，转成用户能看懂的话；系统级错误统一收口到 `handleDbError`，别每个 action 抄一遍 |
+| 14 | **手写类型和 schema 漂移** | 表单值类型用 `z.infer` 推导，不手写——schema 一改类型自动跟。收紧 `z.string()` → `z.enum()` 时编译器会把所有受影响处揪出来（典型：Prisma 的宽 `String` 撞表单的窄联合，在数据边界 `as` 一次收掉） |
 
 ---
 

@@ -1,6 +1,6 @@
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import { fetchCategories } from '@/app/lib/data/transaction';
-import CreateTransactionForm from '@/app/ui/transactions/create-form';
+import TransactionForm from '@/app/ui/transactions/transaction-form';
 
 export default async function CreateTransaction() {
   // 分类数据在服务端查好，经 props 传给 client 表单（server → client 唯一通道）
@@ -14,7 +14,8 @@ export default async function CreateTransaction() {
           { label: '创建账单', href: '/dashboard/transactions/create', active: true },
         ]}
       />
-      <CreateTransactionForm categories={categories} />
+      {/* 不传 transaction = 新增模式 */}
+      <TransactionForm categories={categories} />
     </main>
   );
 }

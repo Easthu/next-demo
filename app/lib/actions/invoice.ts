@@ -49,7 +49,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
   }
 
   const { customerId, amount, status } = validatedFields.data;
-  const amountInCents = amount * 100;
+  const amountInCents = Math.round(amount * 100);
   const date = new Date().toISOString().split('T')[0];
 
   try {
@@ -77,7 +77,7 @@ export async function updateInvoice(id: string, formData: FormData) {
     status: formData.get('status'),
   });
 
-  const amountInCents = amount * 100;
+  const amountInCents = Math.round(amount * 100);
 
   try {
     await prisma.invoice.update({
@@ -99,10 +99,9 @@ export async function updateInvoice(id: string, formData: FormData) {
 
 // 删除发票（列表页用）—— 仅 admin
 export async function deleteInvoice(id: string) {
-  // ⭐ TODO（你来填）：权限校验 —— 只有 admin 能删除发票
-  // 提示（两行）：
-    const session = await auth();
-    if (session?.user?.role !== 'admin') throw new Error('无权限删除发票');
+  // 权限校验：RBAC 第三层（Server Action 层）——UI 层入口隐藏挡不住直接调 action
+  const session = await auth();
+  if (session?.user?.role !== 'admin') throw new Error('无权限删除发票');
   try {
     await prisma.invoice.delete({ where: { id } });
     revalidatePath('/dashboard/invoices');
@@ -114,10 +113,8 @@ export async function deleteInvoice(id: string) {
 
 // 删除发票并跳转（详情页用）—— 仅 admin
 export async function deleteInvoiceAndRedirect(id: string) {
-  // ⭐ TODO（你来填）：权限校验 —— 只有 admin 能删除发票
-  // 提示（两行）：
-    const session = await auth();
-    if (session?.user?.role !== 'admin') throw new Error('无权限删除发票');
+  const session = await auth();
+  if (session?.user?.role !== 'admin') throw new Error('无权限删除发票');
   try {
     await prisma.invoice.delete({ where: { id } });
   } catch (error) {

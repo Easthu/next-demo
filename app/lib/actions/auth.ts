@@ -9,7 +9,7 @@ export async function logout() {
   await signOut();
 }
 
-// 处理登录请求（包装 NextAuth 的 signIn）
+// 处理登录请求（登录表单的 useActionState 模式，签名 (prevState, formData)）
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData,
@@ -25,6 +25,8 @@ export async function authenticate(
           return '发生未知错误。';
       }
     }
+    // ⚠️ 非 AuthError 的错误必须原样重抛：登录成功后的跳转靠 throw NEXT_REDIRECT 工作，
+    // 吞掉它就会变成"登录成功却不跳转"（和 redirect 被 catch 截胡是同一族坑）
     throw error;
   }
 }

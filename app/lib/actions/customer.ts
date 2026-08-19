@@ -1,5 +1,7 @@
 "use server";
 // 客户相关的 Server Actions（创建、更新、删除）
+// 这是最早的 CRUD 练习模块：错误处理走 throw → error.tsx 展示；
+// 后来的记账本模块改成了 return { success, message } + toast——两种模式并存，见 transaction.ts
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
@@ -105,7 +107,7 @@ export async function updateCustomer(prevState: CustomerState, formData: FormDat
   redirect('/dashboard/customers');
 }
 
-// 删除客户（列表页用，先检查有没有发票）
+// 删除客户（列表页用，删后原地刷新；有发票先拦，错误 throw 给 error.tsx 接）
 export async function deleteCustomer(id: string) {
   const invoiceCount = await prisma.invoice.count({ where: { customer_id: id } });
   if (invoiceCount > 0) {
@@ -122,7 +124,7 @@ export async function deleteCustomer(id: string) {
   revalidatePath('/dashboard/customers');
 }
 
-// 删除客户并跳转（详情页用）
+// 删除客户并跳转（详情页用——详情页删完留在原地就 404 了，必须跳回列表）
 export async function deleteCustomerAndRedirect(id: string) {
   const invoiceCount = await prisma.invoice.count({ where: { customer_id: id } });
   if (invoiceCount > 0) {

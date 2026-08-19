@@ -14,8 +14,9 @@ import {
   createCategory,
   updateCategory,
 } from '@/app/lib/actions/transaction';
-import type { CreateCategoryInput } from '@/app/lib/definitions';
-
+import { createCategoriesSchema,type CreateCategoryInput } from '@/app/lib/definitions';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 // 编辑时由服务端查好传下来的最小形状（完整 TransactionCategory 也兼容，TS 结构类型只认形状）
 type FormCategory = {
   id: number;
@@ -34,15 +35,15 @@ export default function CategoryForm({
   // defaultValues 只在挂载时生效；编辑页每次进入都是新路由、组件重新挂载，
   // 不存在"props 变了表单不刷新"的问题（对照 Vue：等于每次 route 变化重建 form）
   const form = useForm<CreateCategoryInput>({
+    resolver: zodResolver(createCategoriesSchema),
     defaultValues: category
       ? {
           name: category.name,
-          type: category.type,
+          // 库里 type 是字符串（见 schema.prisma 注释），表单世界只有这两个值——边界处收窄
+          type: category.type as CreateCategoryInput['type'],
           description: category.description ?? '', // 库里是 null，表单要空字符串
         }
       : { name: '', type: 'expense', description: '' },
-    // TODO(你)：definitions.ts 里 createCategoriesSchema 字段补齐后，接上
-    // resolver: zodResolver(createCategoriesSchema)（import 也别忘了）
   });
 
   const onSubmit = async (values: CreateCategoryInput) => {
@@ -52,8 +53,8 @@ export default function CategoryForm({
       : await createCategory(values);
 
     if (!result.success) {
-      // TODO(#7 同款)：换 toast.error(result.message)，和 create-form 的 TODO 一起做
-      console.error('保存分类失败:', result.message);
+      // 停掉 console.error：用户看不到控制台，页面顶部弹错误 toast（Toaster 已挂在 layout）
+      toast.error(result.message);
     }
   };
 

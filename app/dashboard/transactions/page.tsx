@@ -10,6 +10,7 @@ import {
   PAGE_SIZE,
 } from '@/app/lib/data/transaction';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
+import { DeleteTransactionButton } from '@/app/ui/transactions/delete-button';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -138,12 +139,13 @@ export default async function Page({
             <TableHead>日期</TableHead>
             <TableHead>类型</TableHead>
             <TableHead>描述</TableHead>
+            <TableHead>操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="py-8 text-center text-gray-500">
+              <TableCell colSpan={7} className="py-8 text-center text-gray-500">
                 {selectedCategory
                   ? `分类「${selectedCategory.name}」下还没有账单`
                   : '还没有账单'}
@@ -158,6 +160,17 @@ export default async function Page({
               <TableCell>{formatDateToLocal(transaction.date)}</TableCell>
               <TableCell>{formatType(transaction.type)}</TableCell>
               <TableCell>{transaction.description || '无'}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`/dashboard/transactions/${transaction.id}/edit`}
+                    className="text-blue-500 hover:underline"
+                  >
+                    编辑
+                  </Link>
+                  <DeleteTransactionButton id={transaction.id} />
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

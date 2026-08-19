@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
+import { DeleteCategoryButton } from '@/app/ui/transactions/delete-category-button'
 export default async function Page({
   searchParams,
 }: {
@@ -68,13 +68,18 @@ export default async function Page({
               </TableCell>
               <TableCell>{category.description || '无'}</TableCell>
               <TableCell>{category.is_system ? '系统预设' : '自定义'}</TableCell>
-              <TableCell>
+              <TableCell className="flex items-center ">
                 <Link
                   href={`/dashboard/transactions/categories/${category.id}/edit`}
-                  className="text-blue-500 hover:underline"
+                  className="text-blue-500 hover:underline mr-3"
                 >
                   编辑
                 </Link>
+                {/* UI 层不给系统预设分类删除入口；action 里的 is_system 复查才是法律——
+                    这行只是体验优化，防不住绕过 UI 直接调 action */}
+                {!category.is_system && (
+                  <DeleteCategoryButton id={category.id} />
+                )}
               </TableCell>
             </TableRow>
           ))}

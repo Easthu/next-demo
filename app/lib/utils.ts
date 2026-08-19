@@ -1,3 +1,4 @@
+// 通用工具函数（样式合并、金额/日期格式化）——不依赖任何业务模块
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Revenue } from './definitions';

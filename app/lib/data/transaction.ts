@@ -3,6 +3,7 @@
 import { prisma } from '@/app/lib/prisma';
 import {
   Prisma,
+  type Transaction,
   type TransactionCategory,
 } from '@prisma/client';
 
@@ -92,6 +93,20 @@ export async function fetchCategoriesPage(params?: {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch categories page.');
+  }
+}
+
+// 查单笔交易——编辑页回填表单用（不带 category include：表单只要 category_id 字段，够用）
+export async function fetchTransactionById(
+  id: string,
+): Promise<Transaction | null> {
+  try {
+    return await prisma.transaction.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch transaction.');
   }
 }
 

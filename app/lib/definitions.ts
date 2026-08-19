@@ -1,7 +1,9 @@
-// 此文件包含数据类型的定义。
-// 它描述了数据的结构，以及每个属性应接受的数据类型。
-// 为了教学简单，我们手动定义了这些类型。
-// 如果使用 ORM（如 Prisma），这些类型会自动生成。
+// 类型和校验规则的单一来源，分两个世界：
+// ① Zod schema（下半部分）——表单输入的"契约"：客户端 zodResolver + 服务端 safeParse 共用一份，
+//    TS 类型由 z.infer 推导，不手写（手写会跟规则漂移）
+// ② 手写类型（上半部分）——Next.js 官方教程的前 Prisma 时代遗产，描述"数据库行"，
+//    部分页面 props 还在引用；数据库行的类型正确来源是 @prisma/client 的生成类型，
+//    这部分属于待清理的旧世界，新的表单输入一律走 ① 的路线
 import { z } from 'zod';
 export type User = {
   id: string;
@@ -88,27 +90,23 @@ export type InvoiceForm = {
   status: 'pending' | 'paid';
 };
 
-// 记账本表单校验 schema（create-form 客户端 和 createTransaction action 服务端共用一份，双保险）
+// 交易表单的校验规则（TransactionForm 客户端 和 create/updateTransaction 服务端共用，双保险）
 export const createTransactionSchema = z.object({
   amount: z.coerce.number().min(0.01, { message: '金额必须大于 0' }), // coerce：number 输入框给的是字符串，先转再验
-  type: z.string({ message: '请选择类型' }),
+  type: z.enum(['income', 'expense'], { message: '请选择类型' }),
   categoryId: z.number().int().positive({ message: '请选择分类' }),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: '请输入有效的日期',
   }),
   description: z.string().optional(),
 });
+// 分类表单的校验规则（CategoryForm + saveCategory 共用；name 的 trim 让首尾空格存不进库）
 export const createCategoriesSchema = z.object({
-  
+  name: z.string().trim().min(1, '请输入名称'),
+  type: z.enum(['income', 'expense']),
+  description: z.string().optional(),
 })
-// 表单值的 TS 类型——由 schema 推导，不手写（手写会漂移）
-export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 
-// TODO(你)：把上面 createCategoriesSchema 的字段补齐（name 非空、type 限定 'income' | 'expense'、
-// description 非必填 → z.string().optional()），然后删掉下面手写类型，
-// 换成 z.infer 推导的写法（和 CreateTransactionInput 同款）——分类表单和两个 action 用的就是它
-export type CreateCategoryInput = {
-  name: string;
-  type: string;
-  description?: string;
-};
+// 表单值的 TS 类型——由 schema 推导，不手写（手写会漂移）
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>
+export type CreateCategoryInput = z.infer<typeof createCategoriesSchema>

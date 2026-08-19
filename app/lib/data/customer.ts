@@ -17,6 +17,8 @@ export async function fetchCustomers() {
 }
 
 // 搜索 + 聚合统计客户列表（客户列表页表格数据）
+// 聚合在 JS 层做：include 出全部发票再 reduce——对照记账本 fetchMonthlySummary 的
+// aggregate（数据库聚合）：数据量小练 include 够用，量大时聚合该下沉给数据库
 export async function fetchFilteredCustomers(query: string) {
   try {
     const data = await prisma.customer.findMany({

@@ -62,12 +62,10 @@ export async function registerUser(prevState: RegisterState, formData: FormData)
 // ───────────────────────────────────────────────────────────
 // 用 bind 调用：updateUserRole.bind(null, userId, newRole) —— 和 deleteInvoice 同款模式
 export async function updateUserRole(userId: string, role: string) {
-  // ⭐ TODO（你来填）：权限校验 —— 只有 admin 能改别人的角色
-  // 这是 RBAC 的「第三层」Server Action 校验，最关键的安全闸
-  // 提示（两行）：
-    const session = await auth();
-    if (session?.user?.role !== 'admin') throw new Error('无权限修改用户角色');
-  // （auth 已经在文件顶部 import 好了）
+  // 权限校验：RBAC 的第三层（Server Action 层），最关键的安全闸——
+  // UI 层的入口隐藏挡不住绕过页面直接调 action，这里才是法律
+  const session = await auth();
+  if (session?.user?.role !== 'admin') throw new Error('无权限修改用户角色');
 
   try {
     await prisma.user.update({
