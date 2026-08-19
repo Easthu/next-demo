@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   Radio,
+  Tags,
   UserCog,
   Users,
 } from "lucide-react"
@@ -47,6 +48,7 @@ export function AppSidebar({
       ? [{ title: "用户管理", url: "/dashboard/users", icon: UserCog }]
       : []),
     {title: "账单", url: "/dashboard/transactions", icon: ArrowUpCircleIcon},
+    {title: "分类管理", url: "/dashboard/transactions/categories", icon: Tags},
   ]
 
   return (

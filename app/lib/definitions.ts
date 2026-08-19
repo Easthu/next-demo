@@ -98,6 +98,17 @@ export const createTransactionSchema = z.object({
   }),
   description: z.string().optional(),
 });
-
+export const createCategoriesSchema = z.object({
+  
+})
 // 表单值的 TS 类型——由 schema 推导，不手写（手写会漂移）
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+
+// TODO(你)：把上面 createCategoriesSchema 的字段补齐（name 非空、type 限定 'income' | 'expense'、
+// description 非必填 → z.string().optional()），然后删掉下面手写类型，
+// 换成 z.infer 推导的写法（和 CreateTransactionInput 同款）——分类表单和两个 action 用的就是它
+export type CreateCategoryInput = {
+  name: string;
+  type: string;
+  description?: string;
+};

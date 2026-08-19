@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
@@ -45,6 +46,34 @@ export function MyInput({
           <FormLabel>{label}</FormLabel>
           <FormControl>
             <Input {...field} {...rest} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+// 多行文本：描述、备注等长文本；非必填由 Zod schema 的 optional() 决定，组件本身不关心
+export function MyTextarea({
+  name,
+  label,
+  ...rest
+}: {
+  name: string;
+  label: string;
+} & React.ComponentProps<typeof Textarea>) {
+  const form = useFormContext();
+
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Textarea {...field} {...rest} />
           </FormControl>
           <FormMessage />
         </FormItem>

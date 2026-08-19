@@ -7,7 +7,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { MyInput, MyRadioGroup, MySelect } from '@/components/my-form';
@@ -100,8 +100,8 @@ export default function CreateTransactionForm({
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? '保存中…' : '保存'}
           </Button>
-          <Button type="button" variant="outline">
-            取消
+          <Button type="button" variant="outline" asChild>
+            <Link href="/dashboard/transactions">取消</Link>
           </Button>
           {/* TODO：取消按钮接返回列表的跳转（想想 client 组件里跳转用哪个 API） */}
         </div>
